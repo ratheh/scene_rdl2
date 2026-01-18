@@ -40,13 +40,20 @@ target_sources(${component}
         RenderPrepStats.cc
         RunLenBitTable.cc
         Sha1Util.cc
-	ShmData.cc
-	ShmFb.cc
-	ShmFbOutput.cc
-	ShmFootmark.cc
         SockUtil.cc
         TlSvr.cc
 )
+
+# Shared memory utilities are Linux-specific
+if(IsLinuxPlatform)
+    target_sources(${component}
+        PRIVATE
+            ShmData.cc
+            ShmFb.cc
+            ShmFbOutput.cc
+            ShmFootmark.cc
+    )
+endif()
 
 set_property(TARGET ${component}
     PROPERTY PUBLIC_HEADER
@@ -70,13 +77,20 @@ set_property(TARGET ${component}
         RenderPrepStats.h
         RunLenBitTable.h
         Sha1Util.h
-	ShmData.h
-	ShmFb.h
-	ShmFbOutput.h
-	ShmFootmark.h
         SockUtil.h
         TlSvr.h
 )
+
+# Shared memory headers are Linux-specific
+if(IsLinuxPlatform)
+    set_property(TARGET ${component} APPEND
+        PROPERTY PUBLIC_HEADER
+            ShmData.h
+            ShmFb.h
+            ShmFbOutput.h
+            ShmFootmark.h
+    )
+endif()
 
 target_include_directories(${component}
     PUBLIC

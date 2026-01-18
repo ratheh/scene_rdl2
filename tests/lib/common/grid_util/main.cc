@@ -6,7 +6,9 @@
 #include "TestParser.h"
 #include "TestPixelBufferSha1.h"
 #include "TestSha1.h"
+#ifndef _WIN32
 #include "TestShmFb.h"
+#endif
 
 #include <cppunit/extensions/HelperMacros.h>
 #include <cppunit/TestFixture.h>
@@ -22,7 +24,9 @@ main(int ac, char **av)
     CPPUNIT_TEST_SUITE_REGISTRATION(TestParser);
     CPPUNIT_TEST_SUITE_REGISTRATION(TestPixelBufferSha1);
     CPPUNIT_TEST_SUITE_REGISTRATION(TestSha1);
+#ifndef _WIN32
     CPPUNIT_TEST_SUITE_REGISTRATION(TestShmFb);
+#endif
 
     return pdevunit::run(ac, av);
 }

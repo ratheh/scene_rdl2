@@ -9,8 +9,9 @@
 #include <scene_rdl2/render/util/Random.h>
 #include <tbb/enumerable_thread_specific.h>
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
+#include <tbb/task_arena.h>
 #include <algorithm> // std::random_shuffle
+#include <atomic>
 #include <set>
 #include <vector>
 
@@ -212,14 +213,14 @@ typedef uint64_t EntryType;
 typedef MemPool<EntryType> LocalMemPool;
 
 // Counter to hand out unique indices to TLSProxy objects.
-tbb::atomic<unsigned> gNextTLSIndex;
+std::atomic<unsigned> gNextTLSIndex;
 
 // This is a lightweight object which we put into a tbb::enumerable_thread_specific
 // container so that we can map OS thread ids to consistent top level ThreadLocalState
 // objects when running parallel_for loops in the update phase of the frame.
 struct TLSProxy
 {
-    TLSProxy() : mTLSIndex(gNextTLSIndex.fetch_and_increment()) {}
+    TLSProxy() : mTLSIndex(gNextTLSIndex.fetch_add(1)) {}
     unsigned mTLSIndex;
 };
 
@@ -253,7 +254,7 @@ testMemPoolAllocator(const char *name,
                      unsigned numLoops,
                      unsigned numOpsPerLoop)
 {
-    const unsigned numThreads = tbb::task_scheduler_init::default_num_threads();
+    const unsigned numThreads = tbb::this_task_arena::max_concurrency();
     const unsigned totalBlocks = numBlocksToReservePerThread * numThreads;
 
     //

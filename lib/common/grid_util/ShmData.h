@@ -5,6 +5,7 @@
 #include <cstring> // memcpy
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace scene_rdl2 {
 namespace grid_util {
@@ -84,10 +85,10 @@ protected:
         return std::string(descriptionAddr);
     }
     static std::string retrieveMessage(void* const topAddr, const size_t offset, const size_t msgSize) {
-        char msg[msgSize + 1];
-        memcpy(msg, topAddr, msgSize); // null terminated
+        std::vector<char> msg(msgSize + 1);
+        memcpy(msg.data(), topAddr, msgSize); // null terminated
         msg[msgSize] = 0x0; // just in case
-        return std::string(msg);
+        return std::string(msg.data());
     }
 
     static constexpr size_t calcMemAlignment(const size_t offset, const size_t alignment) {

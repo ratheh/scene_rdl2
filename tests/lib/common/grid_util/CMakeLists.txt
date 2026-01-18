@@ -13,8 +13,15 @@ target_sources(${target}
         TestParser.cc
         TestPixelBufferSha1.cc
         TestSha1.cc
-	TestShmFb.cc
 )
+
+# Shared memory tests are Linux-specific
+if(IsLinuxPlatform)
+    target_sources(${target}
+        PRIVATE
+            TestShmFb.cc
+    )
+endif()
 
 target_link_libraries(${target}
     PRIVATE
