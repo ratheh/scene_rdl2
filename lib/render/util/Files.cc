@@ -150,13 +150,19 @@ writeTest(const std::string& filePath, bool createDirectories)
 std::string
 findFile(const std::string& name, const std::string& searchPath)
 {
-    // Prepend colon-separated entries from the searchPath until we succeed or
-    // run out of entries.
+    // Search path entries separated by ':' on Unix, ';' on Windows
+    // (Windows uses ':' in drive letters like "C:")
+#ifdef _WIN32
+    const char pathSeparator = ';';
+#else
+    const char pathSeparator = ':';
+#endif
+
     std::string remaining = searchPath;
     while (!remaining.empty()) {
         // Grab the next path entry.
-        std::size_t colonPos = remaining.find_first_of(':');
-        std::string directory = remaining.substr(0, colonPos);
+        std::size_t sepPos = remaining.find_first_of(pathSeparator);
+        std::string directory = remaining.substr(0, sepPos);
 
         // Concatenate it with the filename and check for existence.
         std::string path = directory + '/' + name;
@@ -166,8 +172,8 @@ findFile(const std::string& name, const std::string& searchPath)
         }
 
         // Move to the next path entry.
-        if (colonPos != std::string::npos) {
-            remaining = remaining.substr(colonPos + 1, std::string::npos);
+        if (sepPos != std::string::npos) {
+            remaining = remaining.substr(sepPos + 1, std::string::npos);
         } else {
             remaining = "";
         }

@@ -9,7 +9,8 @@ set(exportGroup ${PROJECT_NAME}Targets)
 add_library(${component} SHARED "")
 add_library(${PROJECT_NAME}::${component} ALIAS ${component})
 
-if(NOT IsDarwinPlatform)
+if(IsLinuxPlatform)
+    # NUMA and CPU affinity features are Linux-specific
     set(PlatformSpecificHeaders
         CpuAffinityMask.h
         CpuSocketUtil.h

@@ -47,13 +47,36 @@ find_package(Boost REQUIRED
 
 # CMake provides a FindLua.cmake module, but it only sets the
 # variables and doesn't create an IMPORTED target
+# vcpkg's lua package creates target 'lua' but not 'Lua::lua'
 find_package(Lua REQUIRED)
 if(LUA_FOUND AND NOT TARGET Lua::lua)
-    add_library(Lua::lua UNKNOWN IMPORTED)
-    set_target_properties(Lua::lua PROPERTIES
-    IMPORTED_LOCATION "${LUA_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
-)
+    if(TARGET lua)
+        # vcpkg case: lua target exists, create Lua::lua to match it
+        add_library(Lua::lua SHARED IMPORTED)
+        get_target_property(_lua_configs lua IMPORTED_CONFIGURATIONS)
+        foreach(_config ${_lua_configs})
+            get_target_property(_lua_location lua IMPORTED_LOCATION_${_config})
+            get_target_property(_lua_implib lua IMPORTED_IMPLIB_${_config})
+            if(_lua_location)
+                set_property(TARGET Lua::lua APPEND PROPERTY IMPORTED_CONFIGURATIONS ${_config})
+                set_target_properties(Lua::lua PROPERTIES IMPORTED_LOCATION_${_config} "${_lua_location}")
+            endif()
+            if(_lua_implib)
+                set_target_properties(Lua::lua PROPERTIES IMPORTED_IMPLIB_${_config} "${_lua_implib}")
+            endif()
+        endforeach()
+        get_target_property(_lua_includes lua INTERFACE_INCLUDE_DIRECTORIES)
+        if(_lua_includes)
+            set_target_properties(Lua::lua PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${_lua_includes}")
+        endif()
+    else()
+        # Traditional case: use LUA_LIBRARY variable
+        add_library(Lua::lua UNKNOWN IMPORTED)
+        set_target_properties(Lua::lua PROPERTIES
+            IMPORTED_LOCATION "${LUA_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
+        )
+    endif()
 endif()
 
 find_package(CppUnit REQUIRED)

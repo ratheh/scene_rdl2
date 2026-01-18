@@ -63,7 +63,33 @@ atomicCmpxchg128(volatile void* ptr, void* expected, void* desired)
     return success;
 }
 
-#else // else of PLATFORM_APPLE
+#elif defined(_WIN32)
+
+#include <intrin.h>
+
+inline bool
+atomicCmpxchg128(volatile void* ptr, void* expected, void* desired)
+{
+    //
+    // Windows implementation using _InterlockedCompareExchange128 intrinsic
+    // This provides 128-bit atomic compare-and-swap on x64 Windows
+    //
+    // _InterlockedCompareExchange128 returns 1 if the exchange was performed, 0 otherwise
+    // On failure, expected is updated with the current value at ptr
+    //
+    __int64* ptr64 = reinterpret_cast<__int64*>(const_cast<void*>(ptr));
+    __int64* expected64 = reinterpret_cast<__int64*>(expected);
+    __int64* desired64 = reinterpret_cast<__int64*>(desired);
+
+    return _InterlockedCompareExchange128(
+        ptr64,
+        desired64[1],  // ExchangeHigh
+        desired64[0],  // ExchangeLow
+        expected64     // ComparandResult - updated on failure
+    ) != 0;
+}
+
+#else // Linux x86-64
 
 inline bool
 atomicCmpxchg128(volatile void* ptr, void* expected, void* desired)
@@ -80,7 +106,7 @@ atomicCmpxchg128(volatile void* ptr, void* expected, void* desired)
         // cmpxchg16b uses a lock prefix, this means this instruction always executed under precise
         // strict memory order (equivalent to __ATOMIC_SEQ_CST:Sequencial Consistency). There is no way
         // to select other memory order.
-        // The cmpxchg16b instruction runs Strong Compare and Exchange always. We don't have Weak options. 
+        // The cmpxchg16b instruction runs Strong Compare and Exchange always. We don't have Weak options.
         //
         // Compare side value
         //  RDX: expected upper 64bit
@@ -100,7 +126,7 @@ atomicCmpxchg128(volatile void* ptr, void* expected, void* desired)
            "+d" (((unsigned long long*)expected128)[1]), //         %1: expected upper 64bit (RDX)
            "+a" (((unsigned long long*)expected128)[0]), //         %2: expected lower 64bit (RAX)
            "=q" (result)                                 //         %3: output result 8bit register
-         : "c" (((unsigned long long*)desired128)[1]),   //         %4: desired upper 64bit (RCX) 
+         : "c" (((unsigned long long*)desired128)[1]),   //         %4: desired upper 64bit (RCX)
            "b" (((unsigned long long*)desired128)[0])    //         %5: desired lower 64bit (RBX)
          : "cc"
          );
@@ -108,7 +134,7 @@ atomicCmpxchg128(volatile void* ptr, void* expected, void* desired)
     return result;
 }
 
-#endif // end of Not PLATFORM_APPLE
+#endif // end platform checks
 
 //
 // The following Store/Load functions provide 128-bit lock-free atomic operations but might cause some issues
@@ -125,20 +151,27 @@ atomicCmpxchg128(volatile void* ptr, void* expected, void* desired)
 //    But the 128-bit value itself is guranteed to be atomically operated.
 //
 
+// Portable 128-bit type for Store/Load operations
+struct Int128 {
+    int64_t low;
+    int64_t high;
+};
+
 inline void
 atomicStore128(volatile void* ptr, void* val)
 //
 // This function internally uses atomicCmpxchg128() and always stores value under precise memory order
 // (equivalent to __ATOMIC_SEQ_CST:Sequencial Consistency). There is no way to select other memory order.
-// 
+//
 {
-    volatile __int128* ptr128 = reinterpret_cast<volatile __int128*>(ptr);
-    __int128* val128 = reinterpret_cast<__int128*>(val);
+    volatile Int128* ptr128 = reinterpret_cast<volatile Int128*>(ptr);
+    Int128* val128 = reinterpret_cast<Int128*>(val);
 
-    __int128 expected;
+    Int128 expected;
     do {
-        expected = *ptr128; // read current value (non atomic)
-    } while (!atomicCmpxchg128(ptr128, &expected, val128));
+        expected.low = ptr128->low;   // read current value (non atomic)
+        expected.high = ptr128->high;
+    } while (!atomicCmpxchg128(const_cast<Int128*>(ptr128), &expected, val128));
 }
 
 inline void
@@ -146,14 +179,15 @@ atomicLoad128(volatile void* ptr, void* dest)
 //
 // This function internally uses atomicCmpxchg128() and always stores value under precise memory order
 // (equivalent to __ATOMIC_SEQ_CST:Sequencial Consistency). There is no way to select other memory order.
-// 
+//
 {
-    volatile __int128* ptr128 = reinterpret_cast<volatile __int128*>(ptr);
-    __int128* dest128 = reinterpret_cast<__int128*>(dest);
+    volatile Int128* ptr128 = reinterpret_cast<volatile Int128*>(ptr);
+    Int128* dest128 = reinterpret_cast<Int128*>(dest);
 
     do {
-        *dest128 = *ptr128; // read current value (non atomic)
-    } while (!atomicCmpxchg128(ptr128, dest128, dest128)); // We use same value for both expected and desired
+        dest128->low = ptr128->low;   // read current value (non atomic)
+        dest128->high = ptr128->high;
+    } while (!atomicCmpxchg128(const_cast<Int128*>(ptr128), dest128, dest128)); // We use same value for both expected and desired
 }
 
 } // namespace util

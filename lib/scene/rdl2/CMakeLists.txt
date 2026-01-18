@@ -274,10 +274,18 @@ separate_arguments(rdl2_json_exporter_args)
 if(IsWindowsPlatform)
     # To run json_exporter at build-time, we need to make sure that all runtime
     # libraries are available to dynamically link with
-    list(APPEND _env_list 
+    list(APPEND _env_list
+        ${CMAKE_BINARY_DIR}/lib/scene/rdl2/Release
+        ${CMAKE_BINARY_DIR}/lib/render/util/Release
+        ${CMAKE_BINARY_DIR}/lib/render/logging/Release
+        ${CMAKE_BINARY_DIR}/lib/common/platform/Release
+        ${CMAKE_BINARY_DIR}/lib/common/math/Release
+        ${CMAKE_BINARY_DIR}/lib/common/fb_util/Release
+        $ENV{VCPKG_ROOT}/installed/x64-windows/bin
         ${CMAKE_PREFIX_PATH}/bin
         ${CMAKE_PREFIX_PATH}/lib
         $ENV{BUILD_DIR}/bin $ENV{BUILD_DIR}/lib $ENV{DEPS_ROOT}/bin $ENV{DEPS_ROOT}/lib
+        $ENV{PATH}
     )
     list(JOIN _env_list ";" _env)
     add_custom_command(OUTPUT ${class_outputs}
@@ -295,16 +303,34 @@ else()
 endif()
 
 # Add a target that executes the above custom command when built
-add_custom_target(coredata_files ALL DEPENDS ${class_outputs})
+if(IsWindowsPlatform)
+    # Skip coredata_files on Windows for now - rdl2_json_exporter crashes
+    # during SceneContext initialization. This needs to be debugged.
+    message(WARNING "Skipping coredata_files generation on Windows due to rdl2_json_exporter crash")
+    add_custom_target(coredata_files)
+else()
+    add_custom_target(coredata_files ALL DEPENDS ${class_outputs})
+endif()
 # =============================================================
 
 
-# Make a symlink in the build tree to mimic the one in the source tree
+# Make symlinks/junctions in the build tree to mimic the ones in the source tree
 # ( in the 'lib' dir is a symlink scene_rdl2 -> . )
 # ... so consumers can include <scene_rdl2/scene/rdl2/rdl2.isph> at build
 # time. TODO: This is pretty awful, consider other solutions.
-add_custom_target(scene_rdl2_symlink ALL
-    COMMAND ${CMAKE_COMMAND} -E create_symlink . ${CMAKE_CURRENT_BINARY_DIR}/../../scene_rdl2)
+if(WIN32)
+    # Windows: Use junctions instead of symlinks (doesn't require privileges)
+    # Create junction in lib directory
+    # Also create junction in include directory for ISPC-generated headers
+    add_custom_target(scene_rdl2_symlink ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/include"
+        COMMAND cmd /c "if not exist \"${CMAKE_CURRENT_BINARY_DIR}/../../scene_rdl2\" mklink /J \"${CMAKE_CURRENT_BINARY_DIR}/../../scene_rdl2\" \"${CMAKE_CURRENT_BINARY_DIR}/../..\""
+        COMMAND cmd /c "if not exist \"${PROJECT_BINARY_DIR}/include/scene_rdl2\" mklink /J \"${PROJECT_BINARY_DIR}/include/scene_rdl2\" \"${PROJECT_BINARY_DIR}/lib\""
+    )
+else()
+    add_custom_target(scene_rdl2_symlink ALL
+        COMMAND ${CMAKE_COMMAND} -E create_symlink . ${CMAKE_CURRENT_BINARY_DIR}/../../scene_rdl2)
+endif()
 
 
 # =============================================================

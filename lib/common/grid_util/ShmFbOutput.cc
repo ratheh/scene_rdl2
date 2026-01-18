@@ -127,8 +127,8 @@ ShmFbOutput::verifyTestResult(const unsigned width,
                               const std::vector<float>& targetData) const
 {
     const float* tPtr = static_cast<const float*>(targetData.data());
-    float t[inChanTotal];
-    auto getTargetPix = [&](const unsigned x, const unsigned y, float t[]) {
+    std::vector<float> t(inChanTotal);
+    auto getTargetPix = [&](const unsigned x, const unsigned y, std::vector<float>& t) {
         unsigned slOffsetPix = ((inTop2BottomFlag) ? height - y - 1 : y) * width;
         unsigned pixOffset = (slOffsetPix + x) * inChanTotal;
         for (unsigned c = 0; c < inChanTotal; ++c) {
@@ -136,7 +136,7 @@ ShmFbOutput::verifyTestResult(const unsigned width,
         }
     };
 
-    auto verifyPixVal = [](const float f[], const float t[], const unsigned chanTotal) {
+    auto verifyPixVal = [](const std::vector<float>& f, const std::vector<float>& t, const unsigned chanTotal) {
         for (unsigned c = 0; c < chanTotal; ++c) {
             if (f[c] != t[c]) return false;
         }
@@ -144,14 +144,14 @@ ShmFbOutput::verifyTestResult(const unsigned width,
     };
 
     std::shared_ptr<ShmFb> fb = mShmFbManager->getFb();
-    float f[outChanTotal];
+    std::vector<float> f(outChanTotal);
 
     const unsigned compareChanTotal = (inChanTotal < outChanTotal) ? inChanTotal : outChanTotal;
     unsigned errorOutput = 0;
     const unsigned errorOutputMax = 32;
     for (unsigned y = 0; y < height; ++y) {
         for (unsigned x = 0; x < width; ++x) {
-            fb->getPixF32(x, y, f);
+            fb->getPixF32(x, y, f.data());
             getTargetPix(x, y, t);
             if (!verifyPixVal(f, t, compareChanTotal)) {
                 if (errorOutput < errorOutputMax) {
