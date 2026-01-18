@@ -5,11 +5,12 @@ set(target scenerdl2_render_util_tests)
 
 add_executable(${target})
 
-if(NOT IsDarwinPlatform)
-set(PlatformSpecificSources
-    TestCpuSocketUtil.cc
-    TestProcCpuAffinity.cc
-    TestThreadPoolExecutor.cc)
+# CPU affinity and socket utilities are Linux-specific
+if(IsLinuxPlatform)
+    set(PlatformSpecificSources
+        TestCpuSocketUtil.cc
+        TestProcCpuAffinity.cc
+        TestThreadPoolExecutor.cc)
 endif()
 
 target_sources(${target}

@@ -370,10 +370,12 @@ install(TARGETS scene_rdl2_tmp scene_rdl2
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${installIncludeDir}
 )
 
-# install the coredata files
-install(
-    FILES
-        ${class_outputs}
-    DESTINATION
-        coredata
-)
+# install the coredata files (skip on Windows since we skip generating them)
+if(NOT IsWindowsPlatform)
+    install(
+        FILES
+            ${class_outputs}
+        DESTINATION
+            coredata
+    )
+endif()
