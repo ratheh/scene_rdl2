@@ -26,7 +26,13 @@ cmd/client_apps/Android/bin/
 *ConfigVersion.cmake
 CMakeUserPresets.json
 
-# ==== Windows Build Artifacts ====
-# Symlinks/junctions recreated by CMake configure
-# (Tracked as relative symlinks but CMake recreates as absolute)
-include/scene_rdl2
+# ==== Windows Junction Handling ====
+# The symlink include/scene_rdl2 is tracked as a Unix symlink.
+# On Windows, CMake recreates it as a junction pointing to lib/.
+# The symlink shows as "deleted" (expected - content differs).
+# Git traverses the junction and sees lib/ contents as untracked.
+# We must ignore the junction contents to keep git status clean.
+# DO NOT delete this symlink from git - it's needed for Linux/macOS.
+
+# Ignore contents accessed via junction (points to lib/)
+/include/scene_rdl2/*
