@@ -104,7 +104,7 @@ __forceinline int __builtin_ctz(unsigned x)
     return (int)_tzcnt_u32(x);
 #else
     unsigned long r;
-    _BitScanForward(&r, x) ? return (int)r : return 32;
+    return _BitScanForward(&r, x) ? (int)r : 32;
 #endif
 }
 
@@ -117,7 +117,7 @@ __forceinline int __builtin_ctzll(unsigned long long x)
     return (int)_tzcnt_u64(x);
 #else
     unsigned long r;
-    _BitScanForward64(&r, x) ? return (int)r : return 32;
+    return _BitScanForward64(&r, x) ? (int)r : 64;
 #endif
 #else
     int l = __builtin_ctz((unsigned)x);
@@ -134,7 +134,7 @@ __forceinline int __builtin_clz(unsigned x)
     return (int)_lzcnt_u32(x);
 #else
     unsigned long r;
-    _BitScanReverse(&r, x) ? return (int)(r ^ 31) : return 32;
+    return _BitScanReverse(&r, x) ? (int)(r ^ 31) : 32;
 #endif
 }
 
