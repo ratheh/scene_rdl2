@@ -354,7 +354,7 @@ public:
     RDL2_DSO_BUILTIN_API static AttributeKey<String> sTemporaryDirectory;
 
     // The aov to use as the primary output
-    static AttributeKey<SceneObject*> sPrimaryAov;
+    RDL2_DSO_BUILTIN_API static AttributeKey<SceneObject*> sPrimaryAov;
 
     // File output logic
     RDL2_DSO_BUILTIN_API static AttributeKey<Bool> sTwoStageOutput;
