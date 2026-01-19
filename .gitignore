@@ -25,3 +25,8 @@ cmd/client_apps/Android/bin/
 
 *ConfigVersion.cmake
 CMakeUserPresets.json
+
+# ==== Windows Build Artifacts ====
+# Symlinks/junctions recreated by CMake configure
+# (Tracked as relative symlinks but CMake recreates as absolute)
+include/scene_rdl2
