@@ -14,13 +14,19 @@ if(IsLinuxPlatform)
     set(PlatformSpecificHeaders
         CpuAffinityMask.h
         CpuSocketUtil.h
-	NumaUtil.h
+        NumaUtil.h
         ProcCpuAffinity.h)
     set(PlatformSpecificSources
         CpuAffinityMask.cc
         CpuSocketUtil.cc
-	NumaUtil.cc
+        NumaUtil.cc
         ProcCpuAffinity.cc)
+elseif(IsWindowsPlatform)
+    # Windows stubs for NUMA functionality
+    set(PlatformSpecificHeaders
+        NumaUtil.h)
+    set(PlatformSpecificSources
+        NumaUtil_windows.cc)
 endif()
 
 target_sources(${component}
