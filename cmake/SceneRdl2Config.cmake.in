@@ -15,15 +15,10 @@ find_dependency(Boost
     regex
     thread)
 
-# CMake provides a FindLua.cmake module, but it only sets the
-# variables and doesn't create an IMPORTED target
-find_dependency(Lua)
-if(LUA_FOUND AND NOT TARGET Lua::lua)
-    add_library(Lua::lua UNKNOWN IMPORTED)
-    set_target_properties(Lua::lua PROPERTIES
-    IMPORTED_LOCATION "${LUA_LIBRARY}"
-    INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
-)
+# Use vcpkg's lua package (unofficial-lua)
+find_package(unofficial-lua CONFIG REQUIRED)
+if(TARGET lua AND NOT TARGET Lua::lua)
+    add_library(Lua::lua ALIAS lua)
 endif()
 
 find_dependency(CppUnit)
