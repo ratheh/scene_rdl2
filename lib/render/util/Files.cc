@@ -33,16 +33,25 @@
      #include <sys/uio.h>
 #elif defined(_MSC_VER)
     #include <direct.h> // _mkdir
+    #include <io.h>     // _access, _creat, _close, _unlink
+    #include <sys/stat.h> // _S_IREAD, _S_IWRITE
     #define access _access
     #define getcwd _getcwd
+    #define creat _creat
+    #define unlink _unlink
     #define F_OK 0
     #define W_OK 2
     #define R_OK 4
+    // Windows _creat uses different mode values than Unix (not permission bits)
+    #define CREAT_MODE (_S_IREAD | _S_IWRITE)
 #else
 #include <sys/sendfile.h>
 #endif
+
 #ifndef _MSC_VER
 #include <unistd.h>
+// Unix uses permission bits for creat mode
+#define CREAT_MODE 0666
 #endif
 
 #include <filesystem>
@@ -104,7 +113,8 @@ writeTest(const std::string& filePath, bool createDirectories)
     }
 
     // Try to create the file.
-    int fd = creat(filePath.c_str(), 0666);
+    // Note: Windows _creat uses _S_IREAD|_S_IWRITE, Unix uses permission bits like 0666
+    int fd = creat(filePath.c_str(), CREAT_MODE);
     if (fd != -1) {
         // Success. Close and remove it.
 #ifndef _MSC_VER
