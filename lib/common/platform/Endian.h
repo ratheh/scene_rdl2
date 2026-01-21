@@ -28,6 +28,10 @@
 
 #elif defined(_MSC_VER)
 
+// IMPORTANT: winsock2.h must be included BEFORE windows.h to avoid conflicts
+#pragma comment(lib,"Ws2_32.lib")
+#include <winsock2.h> // For endian operations (ntohll, htonll)
+
 #ifndef _INC_WINDOWS
     #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
@@ -37,9 +41,6 @@
     #endif
     #include <windows.h>
 #endif // _INC_WINDOWS
-
-#pragma comment(lib,"Ws2_32.lib")
-#include <winsock2.h> // For endian operations
 
 #define htobe16(x) htons(x)
 #define htole16(x) (x)

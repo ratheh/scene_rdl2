@@ -236,7 +236,13 @@ public:
     inline void deqVLUInt(unsigned int &ui);
     inline void deqVLLong(long &l);
     inline void deqVLULong(unsigned long &ul);
-    inline void deqVLSizeT(size_t &t) { deqVLULong(reinterpret_cast<unsigned long &>(t)); }
+    inline void deqVLSizeT(size_t &t) {
+        // On Windows, unsigned long is 4 bytes but size_t is 8 bytes.
+        // We must use a properly sized intermediate to avoid corruption.
+        unsigned long ul;
+        deqVLULong(ul);
+        t = static_cast<size_t>(ul);
+    }
     inline void deqVLIntVector(IntVector &vec);
     inline void deqVLLongVector(LongVector &vec);
 
