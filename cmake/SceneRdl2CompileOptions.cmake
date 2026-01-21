@@ -72,6 +72,10 @@ function(SceneRdl2_cxx_compile_options target)
                 /arch:AVX2                      # Specify the name of the target architecture
                 /Zc:__cplusplus                 # Make sure the preprocessor is defined to check for C++ version
                 /wd4293                         # '>>': shift count negative or too big, undefined behavior
+                # Performance optimization flags
+                /Oi                             # Generate intrinsic functions
+                /Ot                             # Favor fast code over small code
+                /GS-                            # Disable buffer security checks (performance critical code)
         )
     endif()
 endfunction()
