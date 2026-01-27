@@ -31,7 +31,6 @@ set_property(TARGET ${component}
 
 target_include_directories(${component}
     PUBLIC
-	$<BUILD_INTERFACE:${Log4cplus_INCLUDE_DIRS}>
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
