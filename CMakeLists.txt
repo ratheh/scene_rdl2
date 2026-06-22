@@ -114,7 +114,12 @@ include(SConscriptStub)
 # ================================================
 add_subdirectory(lib)
 add_subdirectory(cmd)
-add_subdirectory(mod)
+# macOS 26/clang-21 build: `mod` contains ONLY the Python bindings (mod/python/py_scene_rdl2),
+# which drag in boost::python -> boost::numeric -> mpl integral_c<enum>, hitting a
+# non-downgradable clang-21 hard error ("integer value -1 outside enum range") in Boost 1.78's
+# mpl/aux_/integral_wrapper.hpp. The Python bindings are NOT part of the slim warp_moonray SDK
+# contract (no python), so they are excluded here. (Re-enable + patch Boost MPL for a full build.)
+# add_subdirectory(mod)
 if(GLD STREQUAL "$ENV{STUDIO}")
     add_subdirectory(bart_tools)
     if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

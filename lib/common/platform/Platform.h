@@ -588,7 +588,7 @@ namespace util {
       // of two is a multiple of that number: 2*(2*2*2), 2*2*(2*2*2), ...
       MNRY_ASSERT(align >= sizeof(void*));
 
-#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L) || (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 600)
+#if (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L) || (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 600) || defined(__APPLE__)
       void* memptr = nullptr;
 #if defined(DEBUG)
       const int error =

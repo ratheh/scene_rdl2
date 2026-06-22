@@ -9079,3 +9079,67 @@ FORCE_INLINE uint64_t _rdtsc(void)
 #endif
 
 #endif
+
+/* === MoonRay macOS/arm64 build compat (added for macOS 26 / Xcode 16.2 port) ===
+ * scene_rdl2/lib/common/math/ssef.h uses the AVX intrinsic _mm_cmp_ps with ordered
+ * predicate constants (_CMP_GT_OQ/_CMP_EQ_OQ/_CMP_LT_OQ). On x86 these come from
+ * <immintrin.h>; the bundled immintrin_emu.h emulates them with x86 inline asm and so
+ * cannot be used on arm64. Map _mm_cmp_ps onto the basic SSE compares that this
+ * sse2neon translation already provides (NEON-backed). */
+#if defined(__aarch64__) && !defined(SSE2NEON_AVX_CMP_COMPAT)
+#define SSE2NEON_AVX_CMP_COMPAT 1
+#ifndef _CMP_EQ_OQ
+#define _CMP_EQ_OQ   0x00
+#define _CMP_LT_OS   0x01
+#define _CMP_LE_OS   0x02
+#define _CMP_UNORD_Q 0x03
+#define _CMP_NEQ_UQ  0x04
+#define _CMP_NLT_US  0x05
+#define _CMP_NLE_US  0x06
+#define _CMP_ORD_Q   0x07
+#define _CMP_EQ_UQ   0x08
+#define _CMP_NGE_US  0x09
+#define _CMP_NGT_US  0x0a
+#define _CMP_FALSE_OQ 0x0b
+#define _CMP_NEQ_OQ  0x0c
+#define _CMP_GE_OS   0x0d
+#define _CMP_GT_OS   0x0e
+#define _CMP_TRUE_UQ 0x0f
+#define _CMP_EQ_OS   0x10
+#define _CMP_LT_OQ   0x11
+#define _CMP_LE_OQ   0x12
+#define _CMP_UNORD_S 0x13
+#define _CMP_NEQ_US  0x14
+#define _CMP_NLT_UQ  0x15
+#define _CMP_NLE_UQ  0x16
+#define _CMP_ORD_S   0x17
+#define _CMP_EQ_US   0x18
+#define _CMP_NGE_UQ  0x19
+#define _CMP_NGT_UQ  0x1a
+#define _CMP_FALSE_OS 0x1b
+#define _CMP_NEQ_OS  0x1c
+#define _CMP_GE_OQ   0x1d
+#define _CMP_GT_OQ   0x1e
+#define _CMP_TRUE_US 0x1f
+#endif
+static inline __m128 _mm_cmp_ps(__m128 a, __m128 b, const int imm8)
+{
+    switch (imm8 & 0x1f) {
+        case _CMP_EQ_OQ:  case _CMP_EQ_OS:  return _mm_cmpeq_ps(a, b);
+        case _CMP_LT_OQ:  case _CMP_LT_OS:  return _mm_cmplt_ps(a, b);
+        case _CMP_LE_OQ:  case _CMP_LE_OS:  return _mm_cmple_ps(a, b);
+        case _CMP_GT_OQ:  case _CMP_GT_OS:  return _mm_cmpgt_ps(a, b);
+        case _CMP_GE_OQ:  case _CMP_GE_OS:  return _mm_cmpge_ps(a, b);
+        case _CMP_NEQ_UQ: case _CMP_NEQ_US: case _CMP_NEQ_OQ: case _CMP_NEQ_OS: return _mm_cmpneq_ps(a, b);
+        case _CMP_NLT_US: case _CMP_NLT_UQ: return _mm_cmpnlt_ps(a, b);
+        case _CMP_NLE_US: case _CMP_NLE_UQ: return _mm_cmpnle_ps(a, b);
+        case _CMP_NGT_US: case _CMP_NGT_UQ: return _mm_cmpngt_ps(a, b);
+        case _CMP_NGE_US: case _CMP_NGE_UQ: return _mm_cmpnge_ps(a, b);
+        case _CMP_ORD_Q:  case _CMP_ORD_S:  return _mm_cmpord_ps(a, b);
+        case _CMP_UNORD_Q:case _CMP_UNORD_S:return _mm_cmpunord_ps(a, b);
+        case _CMP_FALSE_OQ:case _CMP_FALSE_OS:return _mm_setzero_ps();
+        case _CMP_TRUE_UQ:case _CMP_TRUE_US:return _mm_castsi128_ps(_mm_set1_epi32(-1));
+        default: return _mm_cmpeq_ps(a, b);
+    }
+}
+#endif /* __aarch64__ AVX cmp compat */
